@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .dashboard-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e0f7fa;
+            color: #00796b;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <h1>Dashboard</h1>
+    <p id="welcome-message">Loading...</p>
+    <div class="status" id="status-message"></div>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('token'); // JWT from localStorage
+        if (!token) {
+            window.location.href = '/login.html'; // Redirect if not authenticated
+            return;
+        }
+
+        fetch('/dashboard', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('welcome-message').innerText = data.message;
+                document.getElementById('status-message').innerText = data.status;
+            })
+            .catch(() => {
+                document.getElementById('welcome-message').innerText = 'Failed to load dashboard.';
+            });
+    });
+
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+    }
+</script>
+</body>
+</html>
