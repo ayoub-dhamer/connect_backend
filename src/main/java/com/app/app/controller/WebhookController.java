@@ -16,8 +16,8 @@ import java.io.BufferedReader;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@RestController
-@RequestMapping("/api/payment")
+//@RestController
+//@RequestMapping("/api/payment")
 public class WebhookController {
 
     @Value("${stripe.webhook.secret}")

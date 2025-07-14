@@ -15,4 +15,8 @@ public class User {
     private String name;
     private String pictureUrl;
     private String password; // can be null for OAuth users
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.ROLE_USER;
 }

@@ -1,5 +1,6 @@
 package com.app.app.security;
 
+import com.app.app.model.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -69,6 +70,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+
     // ✅ Extract username (email or login name) from token
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
@@ -96,10 +98,22 @@ public class JwtTokenProvider {
 
     // ✅ Get Authentication from Token (used by JwtAuthenticationFilter)
     public Authentication getAuthentication(String token) {
-        String username = getUsernameFromToken(token);
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-                username, "", Collections.emptyList());
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        String username = claims.getSubject();
+        String role = claims.get("role", String.class);
+
+        UserDetails userDetails = org.springframework.security.core.userdetails.User
+                .withUsername(username)
+                .password("")
+                .authorities(role) // e.g., "ROLE_USER"
+                .build();
 
         return new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
     }
+
 }

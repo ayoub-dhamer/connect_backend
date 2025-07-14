@@ -1,5 +1,6 @@
 package com.app.app.service;
 
+import com.app.app.model.Role;
 import com.app.app.model.User;
 import com.app.app.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class UserService {
             newUser.setEmail(email);
             newUser.setName(name);
             newUser.setPictureUrl(pictureUrl);
+            newUser.setRole(Role.ROLE_USER); // use Enum
             return userRepository.save(newUser);
         });
     }

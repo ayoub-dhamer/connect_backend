@@ -22,11 +22,12 @@ public class CustomUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
                 .password(user.getPassword() != null ? user.getPassword() : "")
-                .authorities("ROLE_USER") // or your custom roles
+                .authorities(user.getRole().name()) // Use enum name as authority
                 .accountExpired(false)
                 .accountLocked(false)
                 .credentialsExpired(false)
                 .disabled(false)
                 .build();
     }
+
 }
