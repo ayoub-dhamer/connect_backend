@@ -1,5 +1,6 @@
 package com.app.app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,10 +34,12 @@ public class User {
     // 👇 Inverse side of Project.participants
     @ToString.Exclude
     @ManyToMany(mappedBy = "participants")
+    @JsonIgnore
     private Set<Project> projects = new HashSet<>();
 
     // 👇 Inverse side of Task.assignedTeamMembers
     @ToString.Exclude
     @ManyToMany(mappedBy = "assignedTeamMembers")
+    @JsonIgnore
     private Set<Task> tasks = new HashSet<>();
 }

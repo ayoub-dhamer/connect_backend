@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/user")
 public class UserController {
 
     private final UserService userService;
@@ -20,25 +20,25 @@ public class UserController {
     }
 
     //@GetMapping("/api/user/me")
-    @GetMapping("/user/me")
+    @GetMapping("/me")
     public Map<String, Object> getCurrentUser(Authentication authentication) {
         String username = authentication.getName();
         return Map.of("username", username);
     }
 
-    @GetMapping("/users")
+    @GetMapping
     public List<User> getAllUsers() {
         return userService.findAll();
     }
 
-    @GetMapping("/user/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return userService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/user/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();

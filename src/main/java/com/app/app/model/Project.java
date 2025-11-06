@@ -1,5 +1,6 @@
 package com.app.app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -29,6 +30,7 @@ public class Project {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     @ToString.Exclude
+    @JsonIgnoreProperties("projects")
     private Set<User> participants = new HashSet<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
