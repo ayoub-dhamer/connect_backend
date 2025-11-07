@@ -20,6 +20,7 @@ public class UserService {
         user.setEmail(email);
         user.setName(name);
         user.setPictureUrl(picture);
+        user.setPreferredLanguage("en");
 
         // Ensure roles is initialized
         if (user.getRoles() == null) {
