@@ -23,6 +23,9 @@ public class Project {
     @JoinColumn(name = "owner_id")
     private User owner;
 
+    @Enumerated(EnumType.STRING)
+    private ProjectStatus status;
+
     @ManyToMany
     @JoinTable(
             name = "project_participants",
