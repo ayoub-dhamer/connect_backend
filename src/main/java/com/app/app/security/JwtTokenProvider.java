@@ -3,12 +3,15 @@ package com.app.app.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -48,4 +51,27 @@ public class JwtTokenProvider {
     public Claims getClaims(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
+
+    public Map<String, Object> getUserInfo(String token) {
+        Claims claims = getClaims(token);
+        return Map.of(
+                "email", claims.get("email"),
+                "name", claims.get("name"),
+                "picture", claims.get("picture"),
+                "roles", claims.get("roles")
+        );
+    }
+
+    public String resolveTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+
+        for (Cookie cookie : request.getCookies()) {
+            if (cookie.getName().equals("jwt")) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+
+
 }
