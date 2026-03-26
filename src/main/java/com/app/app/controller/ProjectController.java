@@ -19,8 +19,8 @@ public class ProjectController {
     }
 
     @GetMapping
-    public List<Project> getAllProjects() {
-        return projectService.findAll();
+    public List<Project> getAllProjects(Pageable pageable) {
+        return projectService.findAll(pageable);
     }
 
     @GetMapping("/{id}")

@@ -16,8 +16,8 @@ public class ProjectService {
         this.projectRepository = projectRepository;
     }
 
-    public List<Project> findAll() {
-        return projectRepository.findAll();
+    public List<Project> findAll(Pageable pageable) {
+        return projectRepository.findAll(pageable).map(mapper::toDTO);;
     }
 
     public Optional<Project> findById(Long id) {

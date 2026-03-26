@@ -5,6 +5,7 @@ import java.util.Set;
 public record ProjectDTO(
         Long id,
         String name,
-        UserDTO owner,
-        Set<UserDTO> participants
+        Long ownerId,
+        String ownerEmail,
+        Set<Long> participantIds
 ) {}

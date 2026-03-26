@@ -1,5 +1,6 @@
 package com.app.app.config;
 
+import com.app.app.security.JwtTokenProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
@@ -8,24 +9,27 @@ import org.springframework.web.socket.config.annotation.*;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    // Allowed origins for dev (Angular)
+    private final JwtTokenProvider jwtTokenProvider;
+
+    public WebSocketConfig(JwtTokenProvider jwtTokenProvider) {
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
+
     private static final String[] ALLOWED = {"http://localhost:4200"};
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // STOMP endpoint Angular will connect to (SockJS fallback)
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns(ALLOWED)
+                .addInterceptors(new JwtHandshakeInterceptor(jwtTokenProvider))
+                .setHandshakeHandler(new UserHandshakeHandler())
                 .withSockJS();
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Clients send messages to /app/...
         registry.setApplicationDestinationPrefixes("/app");
-        // Broker will broadcast to /topic/...
-        registry.enableSimpleBroker("/topic");
-        // Optionally enable user destination prefix for personal queues
+        registry.enableSimpleBroker("/topic", "/queue");
         registry.setUserDestinationPrefix("/user");
     }
 }
