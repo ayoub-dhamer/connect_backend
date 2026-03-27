@@ -15,10 +15,19 @@ public class SignalingController {
         this.template = template;
     }
 
-    // Client will send to "/app/room/{roomId}"
+    /**
+     * Handles WebRTC signaling for room-based communication.
+     * Path: /app/room/{roomId}
+     */
     @MessageMapping("/room/{roomId}")
     public void signaling(@DestinationVariable String roomId, SignalMessage message) {
-        // broadcast to topic/room.{roomId}
+        // 1. Validation (Optional but Recommended)
+        if (message == null || message.getType() == null) {
+            return;
+        }
+
+        // 2. Broadcast to all participants in the specific room
+        // The Angular client must subscribe to: /topic/room.{roomId}
         template.convertAndSend("/topic/room." + roomId, message);
     }
 }

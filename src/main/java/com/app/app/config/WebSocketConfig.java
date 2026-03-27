@@ -15,15 +15,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    private static final String[] ALLOWED = {"http://localhost:4200"};
-
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(ALLOWED)
+                // Use setAllowedOrigins for explicit domains when using credentials
+                .setAllowedOrigins("http://localhost:4200")
                 .addInterceptors(new JwtHandshakeInterceptor(jwtTokenProvider))
                 .setHandshakeHandler(new UserHandshakeHandler())
-                .withSockJS();
+                .withSockJS()
+                .setClientLibraryUrl("https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js")
+                // 💡 CRITICAL: This allows the browser to pass the JWT cookie
+                .setSessionCookieNeeded(true);
     }
 
     @Override

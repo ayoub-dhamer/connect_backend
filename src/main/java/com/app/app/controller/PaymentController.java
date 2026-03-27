@@ -24,8 +24,10 @@ public class PaymentController {
     public Map<String, Object> createCheckoutSession(@RequestBody Map<String, Object> request) throws StripeException {
         Stripe.apiKey = stripeSecretKey;
 
-        String amountStr = request.get("amount").toString(); // in cents
-        Long amount = Long.parseLong(amountStr);
+        // Fix: Handle decimals and string-to-long conversion safely
+        Object amountObj = request.get("amount");
+        double rawAmount = Double.parseDouble(amountObj.toString());
+        long amountInCents = Math.round(rawAmount * 100);
 
         SessionCreateParams params =
                 SessionCreateParams.builder()
@@ -38,7 +40,7 @@ public class PaymentController {
                                         .setPriceData(
                                                 SessionCreateParams.LineItem.PriceData.builder()
                                                         .setCurrency("usd")
-                                                        .setUnitAmount(amount) // e.g. 2000 = $20
+                                                        .setUnitAmount(amountInCents) // e.g. 2000 = $20
                                                         .setProductData(
                                                                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                                         .setName("Your Product")

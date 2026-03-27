@@ -35,12 +35,14 @@ public class User {
 
     // 👇 Inverse side of Project.participants
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude // Exclude collections from hash/equals
     @ManyToMany(mappedBy = "participants")
     @JsonIgnore
     private Set<Project> projects = new HashSet<>();
 
     // 👇 Inverse side of Task.assignedTeamMembers
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude // Exclude collections from hash/equals
     @ManyToMany(mappedBy = "assignedTeamMembers")
     @JsonIgnore
     private Set<Task> tasks = new HashSet<>();
