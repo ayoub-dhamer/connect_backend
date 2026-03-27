@@ -8,6 +8,10 @@ import lombok.ToString;
 import java.util.HashSet;
 import java.util.Set;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 @Entity
 @Data
 @Table(name = "projects")
@@ -17,8 +21,11 @@ public class Project {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Project name is required")
+    @Size(min = 3, max = 100, message = "Project name must be between 3 and 100 characters")
     private String name;
 
+    @NotNull(message = "Project owner is required")
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;

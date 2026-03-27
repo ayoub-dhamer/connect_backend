@@ -3,6 +3,7 @@ package com.app.app.controller;
 import com.app.app.dto.TaskDTO;
 import com.app.app.model.Task;
 import com.app.app.service.TaskService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,23 +27,20 @@ public class TaskController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long id) {
-        return taskService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        // Service handles the 404 logic
+        return ResponseEntity.ok().body(taskService.findById(id));
     }
 
     @PostMapping
-    public ResponseEntity<TaskDTO> createTask(@RequestBody Task task) {
-        return ResponseEntity.ok(taskService.save(task));
+    public ResponseEntity<TaskDTO> createTask(@Valid @RequestBody Task task) {
+        return ResponseEntity.ok().body(taskService.save(task));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody Task updatedTask) {
-        // We delegate the find-and-update logic to the service
-        // to maintain the DTO mapping flow.
-        return taskService.update(id, updatedTask)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<TaskDTO> updateTask(
+            @PathVariable Long id,
+            @Valid @RequestBody Task updatedTask) {
+        return ResponseEntity.ok().body(taskService.update(id, updatedTask));
     }
 
     @DeleteMapping("/{id}")

@@ -8,47 +8,52 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
     private final TaskRepository taskRepository;
-    private final CentralMapper mapper; // Clean injection of CentralMapper
+    private final CentralMapper centralMapper;
 
-    public TaskService(TaskRepository taskRepository, CentralMapper mapper) {
+    public TaskService(TaskRepository taskRepository, CentralMapper centralMapper) {
         this.taskRepository = taskRepository;
-        this.mapper = mapper;
+        this.centralMapper = centralMapper;
     }
 
     public List<TaskDTO> findAll(Pageable pageable) {
         return taskRepository.findAll(pageable).stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .map(centralMapper::toDTO)
+                .toList(); // Clean Java 17 syntax
     }
 
-    public Optional<TaskDTO> findById(Long id) {
-        return taskRepository.findById(id).map(mapper::toDTO);
+    public TaskDTO findById(Long id) {
+        return taskRepository.findById(id)
+                .map(centralMapper::toDTO)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Task not found with id: " + id));
     }
 
-    // Accepts Entity from Controller, saves, and returns DTO to Frontend
     public TaskDTO save(Task task) {
-        return mapper.toDTO(taskRepository.save(task));
+        return centralMapper.toDTO(taskRepository.save(task));
     }
 
     public void delete(Long id) {
+        if (!taskRepository.existsById(id)) {
+            throw new jakarta.persistence.EntityNotFoundException("Cannot delete: Task " + id + " not found");
+        }
         taskRepository.deleteById(id);
     }
 
-    public Optional<TaskDTO> update(Long id, Task updatedTask) {
+    public TaskDTO update(Long id, Task updatedTask) {
         return taskRepository.findById(id).map(existing -> {
             existing.setName(updatedTask.getName());
             existing.setDescription(updatedTask.getDescription());
             existing.setPriority(updatedTask.getPriority());
             existing.setStatus(updatedTask.getStatus());
+            existing.setFailed(updatedTask.isFailed());
+            existing.setResolved(updatedTask.isResolved());
+            existing.setExpired(updatedTask.isExpired());
             existing.setAssignedTeamMembers(updatedTask.getAssignedTeamMembers());
             existing.setProject(updatedTask.getProject());
-            return mapper.toDTO(taskRepository.save(existing));
-        });
+            return centralMapper.toDTO(taskRepository.save(existing));
+        }).orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Cannot update: Task " + id + " not found"));
     }
 }

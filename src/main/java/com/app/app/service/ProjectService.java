@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable; // Ensure this import is here
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,8 +30,10 @@ public class ProjectService {
     }
 
     // 3. Keep the Optional but map the internal value to DTO
-    public Optional<ProjectDTO> findById(Long id) {
-        return projectRepository.findById(id).map(centralMapper::toDTO);
+    public ProjectDTO findById(Long id) {
+        return projectRepository.findById(id)
+                .map(centralMapper::toDTO)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Project not found with id: " + id));
     }
 
     // 4. Accept the Entity, save, and return the DTO
@@ -42,15 +43,23 @@ public class ProjectService {
     }
 
     public void delete(Long id) {
+        if (!projectRepository.existsById(id)) {
+            throw new jakarta.persistence.EntityNotFoundException("Cannot delete: Project " + id + " not found");
+        }
+        // If this project has tasks, the DB throws DataIntegrityViolationException,
+        // which your GlobalExceptionHandler already handles!
         projectRepository.deleteById(id);
     }
 
-    public Optional<ProjectDTO> update(Long id, Project updatedProject) {
-        return projectRepository.findById(id).map(existing -> {
-            existing.setName(updatedProject.getName());
-            existing.setOwner(updatedProject.getOwner());
-            existing.setParticipants(updatedProject.getParticipants());
-            return centralMapper.toDTO(projectRepository.save(existing));
-        });
+    public ProjectDTO update(Long id, Project updatedProject) {
+        return projectRepository.findById(id)
+                .map(existing -> {
+                    existing.setName(updatedProject.getName());
+                    existing.setOwner(updatedProject.getOwner());
+                    existing.setParticipants(updatedProject.getParticipants());
+                    existing.setStatus(updatedProject.getStatus());
+                    return centralMapper.toDTO(projectRepository.save(existing));
+                })
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Cannot update: Project " + id + " not found"));
     }
 }

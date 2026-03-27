@@ -4,13 +4,13 @@ import com.app.app.security.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
-import java.security.Principal;
 import java.util.Map;
 
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
@@ -23,10 +23,10 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
     @Override
     public boolean beforeHandshake(
-            ServerHttpRequest request,
-            ServerHttpResponse response,
-            WebSocketHandler wsHandler,
-            Map<String, Object> attributes
+            @NonNull ServerHttpRequest request,
+            @NonNull ServerHttpResponse response,
+            @NonNull WebSocketHandler wsHandler,
+            @NonNull Map<String, Object> attributes
     ) {
 
         if (request instanceof ServletServerHttpRequest servletRequest) {
@@ -50,9 +50,9 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
     @Override
     public void afterHandshake(
-            ServerHttpRequest request,
-            ServerHttpResponse response,
-            WebSocketHandler wsHandler,
+            @NonNull ServerHttpRequest request,
+            @NonNull ServerHttpResponse response,
+            @NonNull WebSocketHandler wsHandler,
             Exception exception
     ) {
     }

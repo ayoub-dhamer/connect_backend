@@ -2,6 +2,8 @@ package com.app.app.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -19,14 +21,17 @@ public class User {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     @Column(nullable = false, unique = true)
     private String email;    // Use email as primary key / username
 
+    @NotBlank(message = "Name is required")
     private String name;
 
     private String pictureUrl;
 
-    private String preferredLanguage;
+    private String preferredLanguage = "en";
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))

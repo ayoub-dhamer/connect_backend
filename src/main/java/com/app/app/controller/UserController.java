@@ -20,12 +20,12 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Principal principal) {
-        if (principal == null) return ResponseEntity.status(401).build();
-
-        return userService.findByEmail(principal.getName())
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(404).build());
+    public ResponseEntity<UserDTO> getCurrentUser(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
+        // Service throws 404 if email doesn't exist in DB
+        return ResponseEntity.ok().body(userService.findByEmail(principal.getName()));
     }
 
     @GetMapping
@@ -35,9 +35,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        return userService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok().body(userService.findById(id));
     }
 
     @DeleteMapping("/{id}")

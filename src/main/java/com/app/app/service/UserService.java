@@ -1,7 +1,7 @@
 package com.app.app.service;
 
 import com.app.app.dto.UserDTO;
-import com.app.app.mapper.CentralMapper; // 1. Import CentralMapper
+import com.app.app.mapper.CentralMapper;
 import com.app.app.model.User;
 import com.app.app.repository.UserRepository;
 import org.springframework.data.domain.Pageable;
@@ -9,23 +9,25 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    private final CentralMapper mapper; // 2. Add mapper dependency
+    private final CentralMapper centralMapper;
 
-    public UserService(UserRepository userRepository, CentralMapper mapper) {
+    public UserService(UserRepository userRepository, CentralMapper centralMapper) {
         this.userRepository = userRepository;
-        this.mapper = mapper;
+        this.centralMapper = centralMapper;
     }
 
     public UserDTO saveOrUpdateUser(String email, String name, String picture) {
-        User user = userRepository.findByEmail(email).orElseGet(User::new);
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setRoles(new HashSet<>(List.of("ROLE_USER")));
+            return newUser;
+        });
 
-        user.setEmail(email);
         user.setName(name);
         user.setPictureUrl(picture);
 
@@ -33,36 +35,31 @@ public class UserService {
             user.setPreferredLanguage("en");
         }
 
-        if (user.getRoles() == null) {
-            user.setRoles(new HashSet<>());
-        }
-
-        if (user.getRoles().isEmpty()) {
-            user.getRoles().add("ROLE_USER");
-        }
-
-        User savedUser = userRepository.save(user);
-
-        // 3. Use the central mapper instead of a private helper
-        return mapper.toDTO(savedUser);
+        return centralMapper.toDTO(userRepository.save(user));
     }
 
     public List<UserDTO> findAll(Pageable pageable) {
         return userRepository.findAll(pageable).stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .map(centralMapper::toDTO)
+                .toList();
     }
 
-    public Optional<UserDTO> findById(Long id) {
-        return userRepository.findById(id).map(mapper::toDTO);
+    public UserDTO findById(Long id) {
+        return userRepository.findById(id)
+                .map(centralMapper::toDTO)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found with id: " + id));
     }
 
-    public Optional<UserDTO> findByEmail(String email) {
-        return userRepository.findByEmail(email).map(mapper::toDTO);
+    public UserDTO findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(centralMapper::toDTO)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found with email: " + email));
     }
 
     public void delete(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new jakarta.persistence.EntityNotFoundException("Cannot delete: User " + id + " not found");
+        }
         userRepository.deleteById(id);
     }
-
 }
