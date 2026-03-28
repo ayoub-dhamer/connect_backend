@@ -13,4 +13,5 @@ public record TaskDTO(
         boolean expired,
         Set<UserDTO> assignedTeamMembers,
         ProjectDTO project
-) {}
+) {
+}
