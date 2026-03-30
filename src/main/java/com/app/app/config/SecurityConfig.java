@@ -45,9 +45,22 @@ public class SecurityConfig {
                     return config;
                 }))
                 // CSRF protection for Cookie-based Auth
-                .csrf(csrf -> csrf
+                /*.csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                )*/
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives(
+                                        "default-src 'self'; " +
+                                                "font-src 'self' https://fonts.gstatic.com data:; " +
+                                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                                                "script-src 'self'; " +
+                                                "img-src 'self' data: https:; " +
+                                                "connect-src 'self' ws://localhost:8080 http://localhost:8080;"
+                                )
+                        )
                 )
 
                 // authorization rules

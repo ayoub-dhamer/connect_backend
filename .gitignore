@@ -34,3 +34,13 @@ build/
 
 
 src/main/resources/application.properties
+
+
+# Ignore local configuration files
+.env
+application-local.properties
+
+# If you use an IDE like IntelliJ or Eclipse
+.idea/
+target/
+*.class
