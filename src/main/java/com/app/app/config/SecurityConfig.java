@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
@@ -49,19 +50,27 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                 )*/
-                .csrf(csrf -> csrf.disable())
+
                 .headers(headers -> headers
                         .contentSecurityPolicy(csp -> csp
                                 .policyDirectives(
                                         "default-src 'self'; " +
+
+                                                // Stripe
+                                                "script-src 'self' https://js.stripe.com; " +
+                                                "frame-src https://js.stripe.com; " +
+                                                "connect-src 'self' http://localhost:8080 ws://localhost:8080 https://api.stripe.com; " +
+
+                                                // Fonts
                                                 "font-src 'self' https://fonts.gstatic.com data:; " +
                                                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                                                "script-src 'self'; " +
-                                                "img-src 'self' data: https:; " +
-                                                "connect-src 'self' ws://localhost:8080 http://localhost:8080;"
+
+                                                // Images
+                                                "img-src 'self' data: https:; "
                                 )
                         )
                 )
+                .csrf(AbstractHttpConfigurer::disable)
 
                 // authorization rules
                 .authorizeHttpRequests(auth -> auth

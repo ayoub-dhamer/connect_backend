@@ -1,9 +1,12 @@
 package com.app.app.controller;
 
 import com.app.app.dto.UserDTO;
+import com.app.app.model.User;
 import com.app.app.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -26,6 +29,18 @@ public class UserController {
         }
         // Service throws 404 if email doesn't exist in DB
         return ResponseEntity.ok().body(userService.findByEmail(principal.getName()));
+    }
+
+    @GetMapping("/api/me")
+    public ResponseEntity<UserDTO> getCurrentUser(Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        // Include subscription status in DTO
+        UserDTO dto = centralMapper.toDTO(user);
+        dto.setSubscriptionStatus(user.getSubscriptionStatus()); // ACTIVE, NONE, etc.
+
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping

@@ -38,6 +38,16 @@ public class User {
     @Column(name = "role", nullable = false)
     private Set<String> roles = new HashSet<>();
 
+    @Column(name = "subscription_status")
+    @Enumerated(EnumType.STRING)
+    private SubscriptionStatus subscriptionStatus = SubscriptionStatus.UNPAID;
+
+    @Column(name = "stripe_customer_id")
+    private String stripeCustomerId;
+
+    @Column(name = "stripe_subscription_id")
+    private String stripeSubscriptionId;
+
     // 👇 Inverse side of Project.participants
     @ToString.Exclude
     @EqualsAndHashCode.Exclude // Exclude collections from hash/equals

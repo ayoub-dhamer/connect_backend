@@ -2,8 +2,10 @@ package com.app.app.service;
 
 import com.app.app.dto.UserDTO;
 import com.app.app.mapper.CentralMapper;
+import com.app.app.model.SubscriptionStatus;
 import com.app.app.model.User;
 import com.app.app.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,7 @@ public class UserService {
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setRoles(new HashSet<>(List.of("ROLE_USER")));
+            newUser.setSubscriptionStatus(SubscriptionStatus.UNPAID); // default
             return newUser;
         });
 
@@ -38,10 +41,35 @@ public class UserService {
         return centralMapper.toDTO(userRepository.save(user));
     }
 
+    public void updateSubscription(String email, String stripeCustomerId, String stripeSubscriptionId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        user.setStripeCustomerId(stripeCustomerId);
+        user.setStripeSubscriptionId(stripeSubscriptionId);
+        user.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+
+        userRepository.save(user);
+    }
+
+    public void cancelSubscription(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        user.setSubscriptionStatus(SubscriptionStatus.CANCELED);
+        userRepository.save(user);
+    }
+
     public List<UserDTO> findAll(Pageable pageable) {
         return userRepository.findAll(pageable).stream()
                 .map(centralMapper::toDTO)
                 .toList();
+    }
+
+    public boolean hasActiveSubscription(String email) {
+        return userRepository.findByEmail(email)
+                .map(u -> u.getSubscriptionStatus() == SubscriptionStatus.ACTIVE)
+                .orElse(false);
     }
 
     public UserDTO findById(Long id) {

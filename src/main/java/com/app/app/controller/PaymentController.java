@@ -5,6 +5,8 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -19,6 +21,12 @@ public class PaymentController {
 
     @Value("${frontend.url}")
     private String frontendUrl;
+
+    @GetMapping("/premium-data")
+    public ResponseEntity<String> getPremiumData(Authentication auth) {
+        subscriptionGuard.checkSubscription(auth); // blocks if unpaid
+        return ResponseEntity.ok("This is premium content!");
+    }
 
     @PostMapping("/create-checkout-session")
     public Map<String, Object> createCheckoutSession(@RequestBody Map<String, Object> request) throws StripeException {
