@@ -1,7 +1,8 @@
 package com.app.app.service;
 
 import com.app.app.model.User;
-import com.google.api.client.util.Value;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value; // ✅
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
@@ -16,6 +17,11 @@ public class StripeService {
 
     public StripeService() {
         Stripe.apiKey = stripeSecretKey;
+    }
+
+    @PostConstruct
+    public void init() {
+        Stripe.apiKey = stripeSecretKey; // ✅ runs after injection
     }
 
     public String createCheckoutSession(User user, String planId) throws StripeException {

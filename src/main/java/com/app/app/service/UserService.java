@@ -90,4 +90,18 @@ public class UserService {
         }
         userRepository.deleteById(id);
     }
+
+    public void activateSubscription(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        user.setSubscriptionStatus(SubscriptionStatus.valueOf("ACTIVE"));
+        userRepository.save(user);
+    }
+
+    public UserDTO getCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        return centralMapper.toDTO(user); // subscriptionStatus is already mapped
+    }
 }

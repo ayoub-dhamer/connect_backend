@@ -5,6 +5,7 @@ import com.app.app.security.JwtTokenProvider;
 import com.app.app.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -43,6 +45,7 @@ public class SecurityConfig {
                     config.setAllowedOrigins(List.of("http://localhost:4200"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowCredentials(true); // Required for HttpOnly Cookies
+                    config.setAllowedHeaders(List.of("*"));
                     return config;
                 }))
                 // CSRF protection for Cookie-based Auth
@@ -80,6 +83,8 @@ public class SecurityConfig {
                                 "/api/payments/**",
                                 "/ws/**"
                         ).permitAll()//check this because i used this to bypass the check only so delete this and add a security check in angular
+                        .requestMatchers("/api/stripe/webhook").permitAll()
+                        .requestMatchers("/api/payments/**").authenticated()
                         .anyRequest().authenticated()
                 )
 

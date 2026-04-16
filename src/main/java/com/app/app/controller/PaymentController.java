@@ -1,11 +1,13 @@
 package com.app.app.controller;
 
+import com.app.app.service.SubscriptionService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,9 +24,15 @@ public class PaymentController {
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    private final SubscriptionService subscriptionService;
+
+    public PaymentController(SubscriptionService subscriptionService) {
+        this.subscriptionService = subscriptionService;
+    }
+
+    @PreAuthorize("hasRole('ROLE_PREMIUM')")  // or check subscription via a custom annotation
     @GetMapping("/premium-data")
-    public ResponseEntity<String> getPremiumData(Authentication auth) {
-        subscriptionGuard.checkSubscription(auth); // blocks if unpaid
+    public ResponseEntity<String> getPremiumData() {
         return ResponseEntity.ok("This is premium content!");
     }
 

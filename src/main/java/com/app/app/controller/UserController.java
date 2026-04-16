@@ -23,24 +23,8 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDTO> getCurrentUser(Principal principal) {
-        if (principal == null) {
-            return ResponseEntity.status(401).build();
-        }
-        // Service throws 404 if email doesn't exist in DB
-        return ResponseEntity.ok().body(userService.findByEmail(principal.getName()));
-    }
-
-    @GetMapping("/api/me")
     public ResponseEntity<UserDTO> getCurrentUser(Authentication auth) {
-        User user = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        // Include subscription status in DTO
-        UserDTO dto = centralMapper.toDTO(user);
-        dto.setSubscriptionStatus(user.getSubscriptionStatus()); // ACTIVE, NONE, etc.
-
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(userService.getCurrentUser(auth.getName()));
     }
 
     @GetMapping

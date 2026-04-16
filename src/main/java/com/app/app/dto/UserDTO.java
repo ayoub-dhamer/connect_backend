@@ -1,5 +1,7 @@
 package com.app.app.dto;
 
+import com.app.app.model.SubscriptionStatus;
+
 import java.util.Set;
 
 public record UserDTO(
@@ -8,5 +10,9 @@ public record UserDTO(
         String name,
         String pictureUrl,
         String preferredLanguage,
-        Set<String> roles
-) {}
+        Set<String> roles,
+
+        // ✅ ADD THIS
+        SubscriptionStatus subscriptionStatus
+) {
+}
