@@ -1,5 +1,6 @@
 package com.app.app.service;
 
+import com.app.app.dto.PageResponse;
 import com.app.app.dto.ProjectDTO;
 import com.app.app.mapper.CentralMapper;
 import com.app.app.model.Project;
@@ -22,11 +23,10 @@ public class ProjectService {
     }
 
     // 2. Return a List of DTOs and handle Pagination mapping
-    public List<ProjectDTO> findAll(Pageable pageable) {
-        return projectRepository.findAll(pageable)
-                .stream()
-                .map(centralMapper::toDTO)
-                .collect(Collectors.toList());
+    public PageResponse<ProjectDTO> findAll(Pageable pageable) {
+        return PageResponse.of(
+                projectRepository.findAll(pageable).map(centralMapper::toDTO)
+        );
     }
 
     // 3. Keep the Optional but map the internal value to DTO

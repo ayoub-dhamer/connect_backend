@@ -1,5 +1,6 @@
 package com.app.app.service;
 
+import com.app.app.dto.PageResponse;
 import com.app.app.dto.UserDTO;
 import com.app.app.mapper.CentralMapper;
 import com.app.app.model.SubscriptionStatus;
@@ -60,10 +61,10 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public List<UserDTO> findAll(Pageable pageable) {
-        return userRepository.findAll(pageable).stream()
-                .map(centralMapper::toDTO)
-                .toList();
+    public PageResponse<UserDTO> findAll(Pageable pageable) {
+        return PageResponse.of(
+                userRepository.findAll(pageable).map(centralMapper::toDTO)
+        );
     }
 
     public boolean hasActiveSubscription(String email) {

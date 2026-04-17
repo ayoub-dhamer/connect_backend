@@ -1,5 +1,6 @@
 package com.app.app.controller;
 
+import com.app.app.dto.PageResponse;
 import com.app.app.dto.ProjectDTO;
 import com.app.app.model.Project;
 import com.app.app.service.ProjectService;
@@ -21,8 +22,7 @@ public class ProjectController {
     }
 
     @GetMapping
-    public List<ProjectDTO> getAllProjects(Pageable pageable) {
-        // Service now returns List<ProjectDTO>
+    public PageResponse<ProjectDTO> getAllProjects(Pageable pageable) {
         return projectService.findAll(pageable);
     }
 

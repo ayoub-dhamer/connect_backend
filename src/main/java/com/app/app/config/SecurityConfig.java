@@ -3,6 +3,7 @@ package com.app.app.config;
 import com.app.app.security.JwtAuthenticationFilter;
 import com.app.app.security.JwtTokenProvider;
 import com.app.app.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -48,11 +49,11 @@ public class SecurityConfig {
                     config.setAllowedHeaders(List.of("*"));
                     return config;
                 }))
-                // CSRF protection for Cookie-based Auth
-                /*.csrf(csrf -> csrf
+                .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                )*/
+                        .ignoringRequestMatchers("/api/stripe/webhook") // Stripe can't send CSRF token
+                )
 
                 .headers(headers -> headers
                         .contentSecurityPolicy(csp -> csp
@@ -73,7 +74,7 @@ public class SecurityConfig {
                                 )
                         )
                 )
-                .csrf(AbstractHttpConfigurer::disable)
+                //.csrf(AbstractHttpConfigurer::disable)
 
                 // authorization rules
                 .authorizeHttpRequests(auth -> auth
@@ -86,6 +87,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/stripe/webhook").permitAll()
                         .requestMatchers("/api/payments/**").authenticated()
                         .anyRequest().authenticated()
+                )
+
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Unauthorized\"}");
+                        })
                 )
 
                 // stateless sessions (JWT-based)

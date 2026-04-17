@@ -1,5 +1,6 @@
 package com.app.app.controller;
 
+import com.app.app.dto.PageResponse;
 import com.app.app.dto.TaskDTO;
 import com.app.app.model.Task;
 import com.app.app.service.TaskService;
@@ -21,7 +22,7 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskDTO> getAllTasks(Pageable pageable) {
+    public PageResponse<TaskDTO> getAllTasks(Pageable pageable) {
         return taskService.findAll(pageable);
     }
 

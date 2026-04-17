@@ -1,5 +1,6 @@
 package com.app.app.service;
 
+import com.app.app.dto.PageResponse;
 import com.app.app.dto.TaskDTO;
 import com.app.app.mapper.CentralMapper;
 import com.app.app.model.Task;
@@ -19,10 +20,10 @@ public class TaskService {
         this.centralMapper = centralMapper;
     }
 
-    public List<TaskDTO> findAll(Pageable pageable) {
-        return taskRepository.findAll(pageable).stream()
-                .map(centralMapper::toDTO)
-                .toList(); // Clean Java 17 syntax
+    public PageResponse<TaskDTO> findAll(Pageable pageable) {
+        return PageResponse.of(
+                taskRepository.findAll(pageable).map(centralMapper::toDTO)
+        );
     }
 
     public TaskDTO findById(Long id) {

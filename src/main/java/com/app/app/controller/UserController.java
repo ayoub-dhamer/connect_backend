@@ -1,5 +1,6 @@
 package com.app.app.controller;
 
+import com.app.app.dto.PageResponse;
 import com.app.app.dto.UserDTO;
 import com.app.app.model.User;
 import com.app.app.service.UserService;
@@ -28,7 +29,7 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserDTO> getAllUsers(Pageable pageable) {
+    public PageResponse<UserDTO> getAllUsers(Pageable pageable) {
         return userService.findAll(pageable);
     }
 
