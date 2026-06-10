@@ -1,5 +1,5 @@
 package com.app.app.model;
 
 public enum ProjectStatus {
-    COMPLETED, ONGOING
+    COMPLETED, ONGOING, CLOSED, EXPIRED
 }
