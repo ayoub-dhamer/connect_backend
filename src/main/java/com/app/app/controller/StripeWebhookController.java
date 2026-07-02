@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/stripe")
 public class StripeWebhookController {
 
-    @Value("${stripe.secret.key}")
+    @Value("${stripe.webhook.secret}")
     private String endpointSecret;
 
     private final UserService userService;

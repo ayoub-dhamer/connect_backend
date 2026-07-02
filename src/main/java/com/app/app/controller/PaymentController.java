@@ -1,6 +1,7 @@
 package com.app.app.controller;
 
 import com.app.app.model.PaymentRequest;
+import com.app.app.security.SubscriptionGuard;
 import com.app.app.service.SubscriptionService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -26,9 +27,15 @@ public class PaymentController {
     @Value("${frontend.url}")
     private String frontendUrl;
 
-    @PreAuthorize("hasRole('ROLE_PREMIUM')")  // or check subscription via a custom annotation
+    private final SubscriptionGuard subscriptionGuard;
+
+    public PaymentController(SubscriptionGuard subscriptionGuard) {
+        this.subscriptionGuard = subscriptionGuard;
+    }
+
     @GetMapping("/premium-data")
-    public ResponseEntity<String> getPremiumData() {
+    public ResponseEntity<String> getPremiumData(Authentication auth) {
+        subscriptionGuard.checkSubscription(auth);
         return ResponseEntity.ok("This is premium content!");
     }
 

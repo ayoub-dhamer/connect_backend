@@ -12,10 +12,6 @@ public interface CentralMapper {
 
     UserDTO toDTO(User user);
 
-    @Mapping(source = "owner.id", target = "ownerId")
-    @Mapping(source = "owner.email", target = "ownerEmail")
-    // Note: Replaced expression with a simpler method call for the generator
-    @Mapping(target = "participantIds", source = "participants")
     ProjectDTO toDTO(Project project);
 
     @Mapping(target = "priority", expression = "java(task.getPriority() != null ? task.getPriority().name() : null)")

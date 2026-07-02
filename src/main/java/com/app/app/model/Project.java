@@ -23,6 +23,9 @@ public class Project {
     @Size(min = 3, max = 100, message = "Project name must be between 3 and 100 characters")
     private String name;
 
+    @Size(max = 1000, message = "Description is too long")
+    private String description;
+
     @NotNull(message = "Project owner is required")
     @ManyToOne
     @JoinColumn(name = "owner_id")

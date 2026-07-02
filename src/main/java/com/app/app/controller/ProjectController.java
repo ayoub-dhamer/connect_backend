@@ -1,5 +1,6 @@
 package com.app.app.controller;
 
+import com.app.app.dto.CreateProjectRequest;
 import com.app.app.dto.PageResponse;
 import com.app.app.dto.ProjectDTO;
 import com.app.app.model.Project;
@@ -7,6 +8,7 @@ import com.app.app.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,9 +38,9 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<ProjectDTO> createProject(@Valid @RequestBody Project project) {
+    public ResponseEntity<ProjectDTO> createProject(@Valid @RequestBody CreateProjectRequest request, Authentication auth) {
         // Service.save now returns ProjectDTO
-        return ResponseEntity.ok(projectService.save(project));
+        return ResponseEntity.ok(projectService.createFromRequest(request, auth.getName()));
     }
 
     @PutMapping("/{id}")

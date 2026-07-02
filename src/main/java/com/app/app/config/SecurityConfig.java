@@ -4,12 +4,12 @@ import com.app.app.security.JwtAuthenticationFilter;
 import com.app.app.security.JwtTokenProvider;
 import com.app.app.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
@@ -28,6 +28,9 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserService userService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     public SecurityConfig(
             JwtTokenProvider jwtTokenProvider,
@@ -81,7 +84,6 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/oauth2/**",
                                 "/login/**",
-                                "/api/payments/**",
                                 "/ws/**"
                         ).permitAll()//check this because i used this to bypass the check only so delete this and add a security check in angular
                         .requestMatchers("/api/stripe/webhook").permitAll()
@@ -100,6 +102,7 @@ public class SecurityConfig {
                 // stateless sessions (JWT-based)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new CsrfCookieFilter(), org.springframework.security.web.authentication.www.BasicAuthenticationFilter.class)
                 // OAuth2 login handler
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
@@ -127,7 +130,7 @@ public class SecurityConfig {
                             response.addCookie(cookie);
 
                             // ✅ Redirect to frontend WITHOUT token in URL
-                            response.sendRedirect("http://localhost:4200/login-success");
+                            response.sendRedirect(frontendUrl + "/login-success");
                         })
                 );
 

@@ -1,24 +1,34 @@
 package com.app.app.service;
 
+import com.app.app.dto.CreateProjectRequest;
 import com.app.app.dto.PageResponse;
 import com.app.app.dto.ProjectDTO;
 import com.app.app.mapper.CentralMapper;
-import com.app.app.model.Project;
+import com.app.app.model.*;
 import com.app.app.repository.ProjectRepository;
+import com.app.app.repository.TaskRepository;
+import com.app.app.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Pageable; // Ensure this import is here
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
     private final CentralMapper centralMapper; // 1. Inject the new CentralMapper
 
-    public ProjectService(ProjectRepository projectRepository, CentralMapper centralMapper) {
+    public ProjectService(ProjectRepository projectRepository, UserRepository userRepository, TaskRepository taskRepository, CentralMapper centralMapper) {
         this.projectRepository = projectRepository;
+        this.userRepository = userRepository;
+        this.taskRepository = taskRepository;
         this.centralMapper = centralMapper;
     }
 
@@ -61,5 +71,42 @@ public class ProjectService {
                     return centralMapper.toDTO(projectRepository.save(existing));
                 })
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Cannot update: Project " + id + " not found"));
+    }
+
+    // ProjectService.java
+    public ProjectDTO createFromRequest(CreateProjectRequest request, String ownerEmail) {
+        User owner = userRepository.findByEmail(ownerEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Owner not found"));
+
+        Project project = new Project();
+        project.setName(request.name());
+        project.setDescription(request.description());
+        project.setStatus(ProjectStatus.valueOf(request.status()));
+        project.setOwner(owner);
+
+        if (request.participantIds() != null && !request.participantIds().isEmpty()) {
+            Set<User> participants = new HashSet<>(userRepository.findAllById(request.participantIds()));
+            project.setParticipants(participants);
+        }
+
+        Project saved = projectRepository.save(project);
+
+        if (request.tasks() != null) {
+            for (var t : request.tasks()) {
+                Task task = new Task();
+                task.setName(t.name());
+                task.setPriority(TaskPriority.valueOf(t.priority()));
+                task.setStatus(TaskStatus.valueOf(t.status()));
+                task.setProject(saved);
+                if (t.assignedMemberIds() != null && !t.assignedMemberIds().isEmpty()) {
+                    task.setAssignedTeamMembers(new HashSet<>(userRepository.findAllById(t.assignedMemberIds())));
+                }
+                taskRepository.save(task);
+            }
+        }
+
+        // pendingInviteEmails: hook into ProjectInvitation creation here if you want that flow wired up too
+
+        return centralMapper.toDTO(saved);
     }
 }
