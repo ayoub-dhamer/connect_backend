@@ -18,6 +18,18 @@ public interface CentralMapper {
     @Mapping(target = "status", expression = "java(task.getStatus() != null ? task.getStatus().name() : null)")
     TaskDTO toDTO(Task task);
 
+    @Mapping(source = "sender.email", target = "senderEmail")
+    @Mapping(source = "receiver.email", target = "receiverEmail")
+    ChatMessageDTO toDTO(ChatMessage chatMessage);
+
+    @Mapping(source = "caller.email", target = "callerEmail")
+    @Mapping(source = "caller.name", target = "callerName")
+    @Mapping(source = "receiver.email", target = "receiverEmail")
+    @Mapping(source = "receiver.name", target = "receiverName")
+    @Mapping(target = "callType", expression = "java(callLog.getCallType() != null ? callLog.getCallType().name() : null)")
+    @Mapping(target = "status", expression = "java(callLog.getStatus() != null ? callLog.getStatus().name() : null)")
+    CallLogDTO toDTO(CallLog callLog);
+
     // MapStruct will automatically use this for the Set<User> -> Set<Long> mapping above
     default Set<Long> mapUsersToIds(Set<User> users) {
         if (users == null) return Set.of();
