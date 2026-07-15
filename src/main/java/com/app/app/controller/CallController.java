@@ -26,8 +26,6 @@ public class CallController {
                         signal.callId(), signal.callerEmail(), signal.receiverEmail());
 
                 if (!registered) {
-                    // Receiver (or caller) already tied up — bounce it back as "busy"
-                    // instead of forwarding the invite.
                     messagingTemplate.convertAndSendToUser(
                             signal.callerEmail(),
                             "/queue/call-signal",
@@ -38,8 +36,7 @@ public class CallController {
                 }
             }
             case "decline", "cancel", "ended" -> callStateService.clear(signal.callId());
-            // "accept" needs no state change — registerRinging already marked both busy.
-            default -> { /* no-op for other types */ }
+            default -> { }
         }
 
         messagingTemplate.convertAndSendToUser(signal.receiverEmail(), "/queue/call-signal", signal);
