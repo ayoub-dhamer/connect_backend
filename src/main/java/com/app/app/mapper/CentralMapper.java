@@ -30,8 +30,10 @@ public interface CentralMapper {
     @Mapping(target = "status", expression = "java(callLog.getStatus() != null ? callLog.getStatus().name() : null)")
     CallLogDTO toDTO(CallLog callLog);
 
-    @Mapping(source = "createdBy.email", target = "createdByEmail")
-    GroupDTO toDTO(Group group);
+    // NOTE: Group -> GroupDTO mapping removed. GroupDTO now needs each
+    // member's role (OWNER/ADMIN/MEMBER), which comes from GroupMembership,
+    // not a plain field on Group. That mapping is built manually in
+    // GroupController.toDTO() instead of here.
 
     @Mapping(source = "group.id", target = "groupId")
     @Mapping(source = "sender.email", target = "senderEmail")
@@ -42,7 +44,7 @@ public interface CentralMapper {
     @Mapping(source = "startedBy.email", target = "startedByEmail")
     @Mapping(source = "startedBy.name", target = "startedByName")
     @Mapping(target = "callType", expression = "java(session.getCallType() != null ? session.getCallType().name() : null)")
-    @Mapping(target = "participants", ignore = true) // populated manually in service, see below
+    @Mapping(target = "participants", ignore = true)
     GroupCallSessionDTO toDTO(GroupCallSession session);
 
     @Mapping(source = "user.email", target = "email")
@@ -50,7 +52,6 @@ public interface CentralMapper {
     @Mapping(target = "outcome", expression = "java(p.getOutcome() != null ? p.getOutcome().name() : null)")
     ParticipantOutcomeDTO toDTO(GroupCallParticipant p);
 
-    // MapStruct will automatically use this for the Set<User> -> Set<Long> mapping above
     default Set<Long> mapUsersToIds(Set<User> users) {
         if (users == null) return Set.of();
         return users.stream()

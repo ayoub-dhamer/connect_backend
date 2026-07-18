@@ -13,9 +13,13 @@ import java.util.Optional;
 @Repository
 public interface GroupRepository extends JpaRepository<Group, Long> {
 
-    @Query("SELECT g FROM Group g JOIN g.members m WHERE m.email = :email")
-    List<Group> findAllByMemberEmail(@Param("email") String email);
+    @Query("SELECT DISTINCT g.id FROM Group g JOIN g.memberships m WHERE m.user.email = :email")
+    List<Long> findGroupIdsByMemberEmail(@Param("email") String email);
 
-    @Query("SELECT g FROM Group g LEFT JOIN FETCH g.members WHERE g.id = :id")
+    // Single-level fetch only — memberships, no nested user fetch here.
+    @Query("SELECT DISTINCT g FROM Group g LEFT JOIN FETCH g.memberships WHERE g.id IN :ids")
+    List<Group> findAllByIdsWithMembers(@Param("ids") List<Long> ids);
+
+    @Query("SELECT g FROM Group g LEFT JOIN FETCH g.memberships WHERE g.id = :id")
     Optional<Group> findByIdWithMembers(@Param("id") Long id);
 }

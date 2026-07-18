@@ -6,6 +6,6 @@ import java.util.Set;
 public record GroupDTO(
         Long id,
         String name,
-        String createdByEmail,
-        Set<UserDTO> members
+        String avatarUrl,
+        Set<GroupMemberDTO> members
 ) {}

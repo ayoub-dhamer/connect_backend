@@ -88,6 +88,7 @@ public class SecurityConfig {
                         ).permitAll()//check this because i used this to bypass the check only so delete this and add a security check in angular
                         .requestMatchers("/api/stripe/webhook").permitAll()
                         .requestMatchers("/api/payments/**").authenticated()
+                        .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 )
 

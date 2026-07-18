@@ -8,41 +8,36 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class GroupCallService {
 
     private final GroupRepository groupRepository;
+    private final GroupMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final GroupCallSessionRepository sessionRepository;
     private final GroupCallParticipantRepository participantRepository;
     private final SimpUserRegistry simpUserRegistry;
 
     public GroupCallService(GroupRepository groupRepository,
+                            GroupMembershipRepository membershipRepository,
                             UserRepository userRepository,
                             GroupCallSessionRepository sessionRepository,
                             GroupCallParticipantRepository participantRepository,
                             SimpUserRegistry simpUserRegistry) {
         this.groupRepository = groupRepository;
+        this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
         this.simpUserRegistry = simpUserRegistry;
     }
 
-    /**
-     * Creates the call session and, for every group member other than the
-     * caller, records whether they were reachable (had an active WS session)
-     * at invite time. Reachable members start as NO_ANSWER (pending);
-     * unreachable ones are immediately marked MISSED.
-     *
-     * Returns the list of member emails that WERE reachable, so the caller
-     * can be told who actually got rung.
-     */
     @Transactional
     public List<String> startGroupCall(String callId, Long groupId, String callerEmail, String callType) {
-        Group group = groupRepository.findByIdWithMembers(groupId)
+        Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new EntityNotFoundException("Group not found"));
         User caller = userRepository.findByEmail(callerEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Caller not found"));
@@ -54,9 +49,13 @@ public class GroupCallService {
         session.setCallType(CallType.valueOf(callType.toUpperCase()));
         sessionRepository.save(session);
 
-        List<String> reachable = new java.util.ArrayList<>();
+        List<String> reachable = new ArrayList<>();
 
-        for (User member : group.getMembers()) {
+        List<User> members = membershipRepository.findByGroupId(groupId).stream()
+                .map(GroupMembership::getUser)
+                .toList();
+
+        for (User member : members) {
             if (member.getEmail().equals(callerEmail)) continue;
 
             boolean online = simpUserRegistry.getUser(member.getEmail()) != null;
@@ -70,7 +69,6 @@ public class GroupCallService {
             if (online) reachable.add(member.getEmail());
         }
 
-        // Caller themself always counts as JOINED.
         GroupCallParticipant callerParticipant = new GroupCallParticipant();
         callerParticipant.setCall(session);
         callerParticipant.setUser(caller);
@@ -104,7 +102,7 @@ public class GroupCallService {
                 .filter(p -> p.getOutcome() == ParticipantOutcome.NO_ANSWER)
                 .toList();
 
-        List<String> emails = new java.util.ArrayList<>();
+        List<String> emails = new ArrayList<>();
         for (GroupCallParticipant p : pending) {
             p.setOutcome(ParticipantOutcome.CANCELLED);
             p.setRespondedAt(LocalDateTime.now());
@@ -122,7 +120,6 @@ public class GroupCallService {
             participantRepository.save(p);
         });
 
-        // "Resolved" means no one is still sitting at NO_ANSWER (i.e. still ringing).
         return participantRepository.findByCallId(callId).stream()
                 .noneMatch(p -> p.getOutcome() == ParticipantOutcome.NO_ANSWER);
     }

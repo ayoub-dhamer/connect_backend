@@ -11,7 +11,7 @@ import java.util.Set;
 
 @Entity
 @Data
-@Table(name = "groups_table") // "groups" is a reserved word in Postgres
+@Table(name = "groups") // "groups" is a reserved word in Postgres
 public class Group {
 
     @Id
@@ -22,15 +22,9 @@ public class Group {
     @Size(min = 2, max = 100)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_id", nullable = false)
-    private User createdBy;
+    @Column(name = "avatar_url")
+    private String avatarUrl;
 
-    @ManyToMany
-    @JoinTable(
-            name = "group_members",
-            joinColumns = @JoinColumn(name = "group_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private Set<User> members = new HashSet<>();
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<GroupMembership> memberships = new HashSet<>();
 }

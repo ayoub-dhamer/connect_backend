@@ -1,10 +1,10 @@
 package com.app.app.controller;
 
 import com.app.app.model.GroupCallSignal;
-import com.app.app.model.Group;
+import com.app.app.model.GroupMembership;
 import com.app.app.model.ParticipantOutcome;
 import com.app.app.model.User;
-import com.app.app.repository.GroupRepository;
+import com.app.app.repository.GroupMembershipRepository;
 import com.app.app.service.GroupCallService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -17,29 +17,29 @@ import java.util.List;
 public class GroupCallController {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final GroupRepository groupRepository;
+    private final GroupMembershipRepository membershipRepository;
     private final GroupCallService groupCallService;
 
     public GroupCallController(SimpMessagingTemplate messagingTemplate,
-                               GroupRepository groupRepository,
+                               GroupMembershipRepository membershipRepository,
                                GroupCallService groupCallService) {
         this.messagingTemplate = messagingTemplate;
-        this.groupRepository = groupRepository;
+        this.membershipRepository = membershipRepository;
         this.groupCallService = groupCallService;
     }
 
     @MessageMapping("/group-call/signal")
     public void relayGroupSignal(@Payload GroupCallSignal signal) {
-        System.out.println("[GROUP-CALL] received type=" + signal.type() + " groupId=" + signal.groupId() + " caller=" + signal.callerEmail());
         switch (signal.type()) {
 
             case "invite" -> {
                 groupCallService.startGroupCall(signal.callId(), signal.groupId(), signal.callerEmail(), signal.callType());
 
-                Group group = groupRepository.findByIdWithMembers(signal.groupId()).orElse(null);
-                if (group == null) return;
+                List<User> members = membershipRepository.findByGroupId(signal.groupId()).stream()
+                        .map(GroupMembership::getUser)
+                        .toList();
 
-                for (User member : group.getMembers()) {
+                for (User member : members) {
                     if (member.getEmail().equals(signal.callerEmail())) continue;
                     messagingTemplate.convertAndSendToUser(member.getEmail(), "/queue/group-call-signal", signal);
                 }
