@@ -53,7 +53,7 @@ public class GroupChatController {
         User sender = userRepository.findByEmail(incoming.senderEmail())
                 .orElseThrow(() -> new EntityNotFoundException("Sender not found"));
 
-        boolean isMember = membershipRepository.findByGroupId(groupId).stream()
+        boolean isMember = membershipRepository.findByGroupIdWithUser(groupId).stream()
                 .anyMatch(m -> m.getUser().getId().equals(sender.getId()));
         if (!isMember) throw new AccessDeniedException("Not a member of this group");
 

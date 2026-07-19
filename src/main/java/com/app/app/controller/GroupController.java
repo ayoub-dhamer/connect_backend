@@ -237,7 +237,7 @@ public class GroupController {
     /** Builds the DTO from GroupMembershipRepository directly — bypasses
      *  Group.memberships collection-fetching entirely. */
     private GroupDTO toDTO(Group group) {
-        List<GroupMembership> memberships = membershipRepository.findByGroupId(group.getId());
+        List<GroupMembership> memberships = membershipRepository.findByGroupIdWithUser(group.getId());
 
         Set<GroupMemberDTO> members = memberships.stream()
                 .map(m -> new GroupMemberDTO(

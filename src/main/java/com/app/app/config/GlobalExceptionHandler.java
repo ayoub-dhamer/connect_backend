@@ -70,4 +70,11 @@ public class GlobalExceptionHandler {
         log.warn("Illegal state: {}", ex.getMessage());
         return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
     }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleMaxUploadSize(org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        log.warn("Upload rejected: file too large");
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Map.of("error", "File is too large. Maximum size is 10MB."));
+    }
 }

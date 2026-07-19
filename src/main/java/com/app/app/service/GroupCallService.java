@@ -51,7 +51,7 @@ public class GroupCallService {
 
         List<String> reachable = new ArrayList<>();
 
-        List<User> members = membershipRepository.findByGroupId(groupId).stream()
+        List<User> members = membershipRepository.findByGroupIdWithUser(groupId).stream()
                 .map(GroupMembership::getUser)
                 .toList();
 

@@ -35,7 +35,7 @@ public class GroupCallController {
             case "invite" -> {
                 groupCallService.startGroupCall(signal.callId(), signal.groupId(), signal.callerEmail(), signal.callType());
 
-                List<User> members = membershipRepository.findByGroupId(signal.groupId()).stream()
+                List<User> members = membershipRepository.findByGroupIdWithUser(signal.groupId()).stream()
                         .map(GroupMembership::getUser)
                         .toList();
 

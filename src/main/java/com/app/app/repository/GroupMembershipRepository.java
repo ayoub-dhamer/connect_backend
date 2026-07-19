@@ -1,3 +1,4 @@
+// GroupMembershipRepository.java
 package com.app.app.repository;
 
 import com.app.app.model.GroupMembership;
@@ -19,4 +20,9 @@ public interface GroupMembershipRepository extends JpaRepository<GroupMembership
 
     @Query("SELECT m FROM GroupMembership m WHERE m.group.id = :groupId AND m.role = :role")
     List<GroupMembership> findByGroupIdAndRole(@Param("groupId") Long groupId, @Param("role") GroupRole role);
+
+    // Eagerly fetches the User too — safe to use in non-HTTP contexts
+    // (STOMP handlers) where open-in-view doesn't keep the session alive.
+    @Query("SELECT m FROM GroupMembership m JOIN FETCH m.user WHERE m.group.id = :groupId")
+    List<GroupMembership> findByGroupIdWithUser(@Param("groupId") Long groupId);
 }
