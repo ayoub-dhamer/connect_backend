@@ -3,9 +3,7 @@ package com.app.app.controller;
 import com.app.app.dto.GroupDTO;
 import com.app.app.dto.GroupMemberDTO;
 import com.app.app.model.*;
-import com.app.app.repository.GroupMembershipRepository;
-import com.app.app.repository.GroupRepository;
-import com.app.app.repository.UserRepository;
+import com.app.app.repository.*;
 import com.app.app.service.FileStorageService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -30,15 +28,24 @@ public class GroupController {
     private final GroupMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
+    private final GroupCallSessionRepository sessionRepository;
+    private final GroupCallParticipantRepository participantRepository;
+    private final GroupMessageRepository groupMessageRepository;
 
     public GroupController(GroupRepository groupRepository,
                            GroupMembershipRepository membershipRepository,
                            UserRepository userRepository,
-                           FileStorageService fileStorageService) {
+                           FileStorageService fileStorageService,
+                           GroupCallSessionRepository sessionRepository,
+                           GroupCallParticipantRepository participantRepository,
+                           GroupMessageRepository groupMessageRepository) {
         this.groupRepository = groupRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
+        this.sessionRepository = sessionRepository;
+        this.participantRepository = participantRepository;
+        this.groupMessageRepository = groupMessageRepository;
     }
 
     public record CreateGroupRequest(@NotBlank String name, @NotEmpty Set<Long> memberIds) {}
@@ -179,6 +186,17 @@ public class GroupController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteGroup(@PathVariable Long id, Authentication auth) {
         Group group = requireRole(id, auth.getName(), GroupRole.OWNER);
+
+        // Clean up every dependent table, deepest first, to satisfy FK constraints.
+        List<GroupCallSession> sessions = sessionRepository.findByGroupId(id);
+        for (GroupCallSession session : sessions) {
+            participantRepository.deleteAll(participantRepository.findByCallId(session.getCallId()));
+        }
+        sessionRepository.deleteAll(sessions);
+
+        groupMessageRepository.deleteAll(groupMessageRepository.findByGroupId(id));
+        membershipRepository.deleteAll(membershipRepository.findByGroupId(id));
+
         groupRepository.delete(group);
         return ResponseEntity.noContent().build();
     }

@@ -25,6 +25,6 @@ public class Group {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "group", orphanRemoval = true)
     private Set<GroupMembership> memberships = new HashSet<>();
 }
