@@ -18,4 +18,7 @@ public interface GroupCallParticipantRepository extends JpaRepository<GroupCallP
 
     @Query("SELECT p FROM GroupCallParticipant p WHERE p.call.callId = :callId AND p.user.email = :email")
     Optional<GroupCallParticipant> findByCallIdAndUserEmail(@Param("callId") String callId, @Param("email") String email);
+
+    @Query("SELECT p FROM GroupCallParticipant p WHERE p.user.email = :email AND p.outcome = 'NO_ANSWER'")
+    List<GroupCallParticipant> findPendingByUserEmail(@Param("email") String email);
 }

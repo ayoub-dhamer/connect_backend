@@ -14,4 +14,7 @@ public interface GroupCallSessionRepository extends JpaRepository<GroupCallSessi
 
     @Query("SELECT s FROM GroupCallSession s WHERE s.group.id = :groupId ORDER BY s.startedAt ASC")
     List<GroupCallSession> findByGroupId(@Param("groupId") Long groupId);
+
+    @Query("SELECT s FROM GroupCallSession s WHERE s.group.id = :groupId AND s.endedAt IS NULL ORDER BY s.startedAt DESC")
+    List<GroupCallSession> findActiveByGroupId(@Param("groupId") Long groupId);
 }

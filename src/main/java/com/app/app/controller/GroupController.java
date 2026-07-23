@@ -1,5 +1,6 @@
 package com.app.app.controller;
 
+import com.app.app.dto.GroupActivityDTO;
 import com.app.app.dto.GroupDTO;
 import com.app.app.dto.GroupMemberDTO;
 import com.app.app.model.*;
@@ -31,6 +32,7 @@ public class GroupController {
     private final GroupCallSessionRepository sessionRepository;
     private final GroupCallParticipantRepository participantRepository;
     private final GroupMessageRepository groupMessageRepository;
+    private final GroupActivityRepository activityRepository;
 
     public GroupController(GroupRepository groupRepository,
                            GroupMembershipRepository membershipRepository,
@@ -38,7 +40,7 @@ public class GroupController {
                            FileStorageService fileStorageService,
                            GroupCallSessionRepository sessionRepository,
                            GroupCallParticipantRepository participantRepository,
-                           GroupMessageRepository groupMessageRepository) {
+                           GroupMessageRepository groupMessageRepository, GroupActivityRepository activityRepository) {
         this.groupRepository = groupRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
@@ -46,6 +48,7 @@ public class GroupController {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
         this.groupMessageRepository = groupMessageRepository;
+        this.activityRepository = activityRepository;
     }
 
     public record CreateGroupRequest(@NotBlank String name, @NotEmpty Set<Long> memberIds) {}
@@ -64,10 +67,12 @@ public class GroupController {
         Group saved = groupRepository.save(group);
 
         addMembership(saved, creator, GroupRole.OWNER);
+        logActivity(saved, GroupActivityType.CREATED, creator, null, request.name());
 
         for (User member : userRepository.findAllById(request.memberIds())) {
             if (member.getId().equals(creator.getId())) continue;
             addMembership(saved, member, GroupRole.MEMBER);
+            logActivity(saved, GroupActivityType.MEMBER_ADDED, creator, member, null);
         }
 
         return ResponseEntity.ok(toDTO(saved));
@@ -91,13 +96,19 @@ public class GroupController {
     @PutMapping("/{id}/rename")
     public ResponseEntity<GroupDTO> rename(@PathVariable Long id, @Valid @RequestBody RenameGroupRequest request, Authentication auth) {
         Group group = requireRole(id, auth.getName(), GroupRole.OWNER, GroupRole.ADMIN);
+        User actor = userRepository.findByEmail(auth.getName()).orElseThrow();
+
+        String oldName = group.getName();
         group.setName(request.name());
+        logActivity(group, GroupActivityType.RENAMED, actor, null, oldName + " → " + request.name());
+
         return ResponseEntity.ok(toDTO(groupRepository.save(group)));
     }
 
     @PostMapping("/{id}/members")
     public ResponseEntity<GroupDTO> addMembers(@PathVariable Long id, @Valid @RequestBody AddMembersRequest request, Authentication auth) {
         Group group = requireRole(id, auth.getName(), GroupRole.OWNER, GroupRole.ADMIN);
+        User actor = userRepository.findByEmail(auth.getName()).orElseThrow();
 
         Set<Long> existingIds = membershipRepository.findByGroupId(id).stream()
                 .map(m -> m.getUser().getId()).collect(Collectors.toSet());
@@ -105,6 +116,7 @@ public class GroupController {
         for (User member : userRepository.findAllById(request.memberIds())) {
             if (existingIds.contains(member.getId())) continue;
             addMembership(group, member, GroupRole.MEMBER);
+            logActivity(group, GroupActivityType.MEMBER_ADDED, actor, member, null);
         }
 
         return ResponseEntity.ok(toDTO(group));
@@ -113,6 +125,7 @@ public class GroupController {
     @DeleteMapping("/{id}/members/{userId}")
     public ResponseEntity<GroupDTO> removeMember(@PathVariable Long id, @PathVariable Long userId, Authentication auth) {
         Group group = requireRole(id, auth.getName(), GroupRole.OWNER, GroupRole.ADMIN);
+        User actor = userRepository.findByEmail(auth.getName()).orElseThrow();
 
         GroupMembership target = membershipRepository.findByGroupId(id).stream()
                 .filter(m -> m.getUser().getId().equals(userId))
@@ -123,7 +136,10 @@ public class GroupController {
             throw new IllegalStateException("The owner cannot be removed — transfer ownership first");
         }
 
+        User removedUser = target.getUser();
         membershipRepository.delete(target);
+        logActivity(group, GroupActivityType.MEMBER_REMOVED, actor, removedUser, null);
+
         return ResponseEntity.ok(toDTO(group));
     }
 
@@ -131,6 +147,7 @@ public class GroupController {
     public ResponseEntity<GroupDTO> changeRole(@PathVariable Long id, @PathVariable Long userId,
                                                @Valid @RequestBody ChangeRoleRequest request, Authentication auth) {
         Group group = requireRole(id, auth.getName(), GroupRole.OWNER);
+        User actor = userRepository.findByEmail(auth.getName()).orElseThrow();
 
         GroupMembership target = membershipRepository.findByGroupId(id).stream()
                 .filter(m -> m.getUser().getId().equals(userId))
@@ -145,8 +162,11 @@ public class GroupController {
             throw new IllegalStateException("Cannot change the owner's role directly");
         }
 
+        String oldRole = target.getRole().name();
         target.setRole(newRole);
         membershipRepository.save(target);
+        logActivity(group, GroupActivityType.ROLE_CHANGED, actor, target.getUser(), oldRole + " → " + newRole);
+
         return ResponseEntity.ok(toDTO(group));
     }
 
@@ -167,6 +187,8 @@ public class GroupController {
         membershipRepository.save(currentOwner);
         membershipRepository.save(newOwner);
 
+        logActivity(group, GroupActivityType.OWNERSHIP_TRANSFERRED, currentOwner.getUser(), newOwner.getUser(), null);
+
         return ResponseEntity.ok(toDTO(group));
     }
 
@@ -179,6 +201,7 @@ public class GroupController {
             throw new IllegalStateException("The owner cannot leave — transfer ownership or delete the group instead");
         }
 
+        logActivity(membership.getGroup(), GroupActivityType.MEMBER_LEFT, membership.getUser(), null, null);
         membershipRepository.delete(membership);
         return ResponseEntity.noContent().build();
     }
@@ -187,7 +210,6 @@ public class GroupController {
     public ResponseEntity<Void> deleteGroup(@PathVariable Long id, Authentication auth) {
         Group group = requireRole(id, auth.getName(), GroupRole.OWNER);
 
-        // Clean up every dependent table, deepest first, to satisfy FK constraints.
         List<GroupCallSession> sessions = sessionRepository.findByGroupId(id);
         for (GroupCallSession session : sessions) {
             participantRepository.deleteAll(participantRepository.findByCallId(session.getCallId()));
@@ -195,6 +217,7 @@ public class GroupController {
         sessionRepository.deleteAll(sessions);
 
         groupMessageRepository.deleteAll(groupMessageRepository.findByGroupId(id));
+        activityRepository.deleteByGroupId(id);
         membershipRepository.deleteAll(membershipRepository.findByGroupId(id));
 
         groupRepository.delete(group);
@@ -204,6 +227,7 @@ public class GroupController {
     @PostMapping("/{id}/avatar")
     public ResponseEntity<GroupDTO> uploadAvatar(@PathVariable Long id, @RequestParam("file") MultipartFile file, Authentication auth) throws IOException {
         Group group = requireRole(id, auth.getName(), GroupRole.OWNER, GroupRole.ADMIN);
+        User actor = userRepository.findByEmail(auth.getName()).orElseThrow();
 
         if (file.isEmpty()) throw new IllegalArgumentException("File is empty");
         String contentType = file.getContentType();
@@ -213,6 +237,8 @@ public class GroupController {
 
         String url = fileStorageService.upload(file, "group-avatars");
         group.setAvatarUrl(url);
+        logActivity(group, GroupActivityType.AVATAR_CHANGED, actor, null, null);
+
         return ResponseEntity.ok(toDTO(groupRepository.save(group)));
     }
 
@@ -264,5 +290,30 @@ public class GroupController {
                 .collect(Collectors.toSet());
 
         return new GroupDTO(group.getId(), group.getName(), group.getAvatarUrl(), members);
+    }
+
+    private void logActivity(Group group, GroupActivityType type, User actor, User target, String detail) {
+        GroupActivity activity = new GroupActivity();
+        activity.setGroup(group);
+        activity.setType(type);
+        activity.setActor(actor);
+        activity.setTarget(target);
+        activity.setDetail(detail);
+        activityRepository.save(activity);
+    }
+
+    @GetMapping("/{id}/activity")
+    public List<GroupActivityDTO> getActivity(@PathVariable Long id, Authentication auth) {
+        requireMember(id, auth.getName());
+        return activityRepository.findByGroupId(id).stream()
+                .map(a -> new GroupActivityDTO(
+                        a.getId(),
+                        a.getType().name(),
+                        a.getActor() != null ? a.getActor().getName() : "System",
+                        a.getTarget() != null ? a.getTarget().getName() : null,
+                        a.getDetail(),
+                        a.getTimestamp()
+                ))
+                .toList();
     }
 }
